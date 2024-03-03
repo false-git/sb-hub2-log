@@ -47,7 +47,7 @@ class Hub2Log:
                 self.devices[device.id] = device
                 device_ids.remove(device.id)
         if len(device_ids) > 0:
-            print(f"devic {device_ids} not found.")
+            print(f"device {device_ids} not found.")
             sys.exit(1)
 
     def main(self) -> None:
@@ -109,6 +109,9 @@ class Hub2Log:
                 except RuntimeError as e:
                     print(f"{datetime.now()} {device.id}:", e)
                     time.sleep(1)
+                except ConnectionError as e:
+                    print(f"{datetime.now()} {device.id}:", e)
+                    break
         return results
 
     def task(self) -> None:
