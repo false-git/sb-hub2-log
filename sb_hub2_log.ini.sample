@@ -1,0 +1,15 @@
+[hub2]
+token = <your token>
+secret = <your secret>
+# SwitbhBot Hub2のデバイスIDを,区切りで並べる
+device_ids = <your hub2 device id>
+
+[zabbix]
+# Zabbix server
+server = <zabbix server>
+# Zabbix port
+#port = 10051
+# Zabbix host
+host = <zabbix host>
+# Zabbix key prefix
+#key_prefix = sb

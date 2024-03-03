@@ -1,0 +1,7 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "flake8.args": [
+        "--max-line-length=120"
+    ]
+}
