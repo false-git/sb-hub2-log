@@ -2,6 +2,7 @@
 
 import argparse
 import configparser
+import requests.exceptions  # type: ignore
 import subprocess
 import sys
 import time
@@ -20,6 +21,7 @@ class Hub2Log:
         self.inifile: configparser.ConfigParser = inifile
         self.token: str = inifile.get("hub2", "token")
         self.secret: str = inifile.get("hub2", "secret")
+        self.retry: int = inifile.getint("hub2", "retry", fallback=1)
         device_ids: list[str] = inifile.get("hub2", "device_ids").split(",")
         self.zabbix_server: str | None = inifile.get("zabbix", "server")
         self.zabbix_port: int = inifile.getint("zabbix", "port", fallback=10051)
@@ -97,7 +99,7 @@ class Hub2Log:
         results: dict = {}
         switchbot = SwitchBot(self.token, self.secret)
         for device in self.devices.values():
-            for retry in range(3):
+            for retry in range(self.retry):
                 try:
                     device.client = switchbot.client
                     status: dict = device.status()
@@ -107,10 +109,10 @@ class Hub2Log:
                     self.add_zabbix(f"{device.id}.light_level", status["light_level"])
                     break
                 except RuntimeError as e:
-                    print(f"{datetime.now()} {device.id}:", e)
+                    print(f"{datetime.now()} {device.id}:", e, flush=True)
                     time.sleep(1)
-                except ConnectionError as e:
-                    print(f"{datetime.now()} {device.id}:", e)
+                except requests.exceptions.ConnectionError as e:
+                    print(f"{datetime.now()} {device.id}:", e, flush=True)
                     break
         return results
 
