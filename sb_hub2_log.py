@@ -11,6 +11,16 @@ from datetime import datetime
 from switchbot import SwitchBot  # type: ignore
 
 
+def log(text: str):
+    """ログ出力.
+
+    Args:
+        text: ログ出力文字列
+    """
+    timestamp: str = f"{datetime.now()}"[:-3]
+    print(f"{timestamp} {text}", flush=True)
+
+
 class Hub2Log:
     """SwitchBot Hub2から気温等を読むクラス."""
 
@@ -21,7 +31,8 @@ class Hub2Log:
         self.inifile: configparser.ConfigParser = inifile
         self.token: str = inifile.get("hub2", "token")
         self.secret: str = inifile.get("hub2", "secret")
-        self.retry: int = inifile.getint("hub2", "retry", fallback=1)
+        self.retry: int = inifile.getint("hub2", "retry", fallback=3)
+        self.interval: int = inifile.getint("hub2", "interval", fallback=300)
         device_ids: list[str] = inifile.get("hub2", "device_ids").split(",")
         self.zabbix_server: str | None = inifile.get("zabbix", "server")
         self.zabbix_port: int = inifile.getint("zabbix", "port", fallback=10051)
@@ -109,20 +120,25 @@ class Hub2Log:
                     self.add_zabbix(f"{device.id}.light_level", status["light_level"])
                     break
                 except RuntimeError as e:
-                    print(f"{datetime.now()} {device.id}:", e, flush=True)
+                    log(f"{retry} {device.id} {e}")
                     time.sleep(1)
                 except requests.exceptions.ConnectionError as e:
-                    print(f"{datetime.now()} {device.id}:", e, flush=True)
+                    log(f"{retry} {device.id} {e}")
                     break
         return results
 
     def task(self) -> None:
-        """1分間隔で繰り返し実行."""
-        interval: int = 60
+        """interval(秒)間隔で繰り返し実行."""
+        next_time: int = (int(time.time()) // self.interval + 1) * self.interval
         while True:
+            now: float = time.time()
+            if now < next_time:
+                time.sleep(next_time - now)
+                next_time += self.interval
+            else:
+                next_time = (int(now) // self.interval + 1) * self.interval
             if self.zabbix_server:
                 self.zabbix_trap = open("zabbix.trap", "wt")
-            next_time: int = (int(time.time()) // interval + 1) * interval
             if self.temp_flag:
                 self.log_temp()
             self.log_hub2()
@@ -133,9 +149,6 @@ class Hub2Log:
                         self.zabbix_command, stdout=zabbix_log, stderr=subprocess.STDOUT
                     )
                 self.zabbix_trap = None
-            now: float = time.time()
-            if now < next_time:
-                time.sleep(next_time - now)
 
 
 if __name__ == "__main__":

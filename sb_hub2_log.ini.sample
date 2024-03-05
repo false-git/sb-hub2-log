@@ -1,6 +1,8 @@
 [hub2]
 token = <your token>
 secret = <your secret>
+#retry = 3
+#interval = 300
 # SwitbhBot Hub2のデバイスIDを,区切りで並べる
 device_ids = <your hub2 device id>
 
